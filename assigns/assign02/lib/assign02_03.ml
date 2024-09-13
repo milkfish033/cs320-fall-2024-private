@@ -9,7 +9,7 @@ type path = dir list
 let dist dirs = 
   let rec calc_dis dirs(x,y) =
     match dirs with
-    |[] -> (x,y)
+    |[] -> (x,y) (*base case*)
     | North :: rest -> calc_dis rest (x,y+1)
     | South :: rest -> calc_dis rest (x,y-1)
     | West :: rest -> calc_dis rest (x-1,y)

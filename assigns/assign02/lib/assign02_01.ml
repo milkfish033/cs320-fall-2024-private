@@ -41,7 +41,7 @@ let get_pos b p =
     let is_winning_line p1 p2 p3 =
       p1 = p2 && p2 = p3 && p1 <> Blank
     in
-    is_winning_line tl tm tr ||
+    is_winning_line tl tm tr || 
     is_winning_line ml mm mr ||
     is_winning_line bl bm br ||
     is_winning_line tl ml bl ||
