@@ -1,5 +1,5 @@
 
-let rec lifespan f start pred =
+let lifespan f start pred =
   let rec aux s steps =
     if pred s then steps
     else aux (f s) (steps + 1)

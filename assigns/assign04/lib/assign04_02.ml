@@ -1,11 +1,11 @@
 
 type expr = 
-| True
-| False
-| Num of int
-| Or of expr * expr
-| Add of expr * expr
-| IfThenElse of expr * expr * expr
+  | True
+  | False
+  | Num of int
+  | Or of expr * expr
+  | Add of expr * expr
+  | IfThenElse of expr * expr * expr
 
 type ty = 
   | Int
