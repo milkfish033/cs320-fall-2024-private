@@ -16,13 +16,12 @@ let rec eval (e: expr) : value =
         | _ -> failwith "Undefined behavior")
     |Or(m,n) -> (
       match eval m, eval n with 
-        | VBool true, VBool false -> VBool true
-        | VBool false, VBool true -> VBool true
+        | VBool true, _ -> VBool true
+        | VBool _, VBool true -> VBool true
         | VBool false, VBool false -> VBool false
-        | VBool true, VBool true -> VBool true
         | _ -> failwith "Undefined behavior")
     |IfThenElse (a,b,c) -> (
-      match eval a, eval b, eval c with 
-        | VBool true, _, _ -> eval b 
-        | VBool false, _, _ -> eval c 
+      match eval a with 
+        | VBool true -> eval b 
+        | VBool false -> eval c 
         | _ -> failwith "Undefined behavior")
