@@ -1,6 +1,7 @@
 
 
 open Assign06_02
+open Utils
 
 type value = 
   | VNum of int
