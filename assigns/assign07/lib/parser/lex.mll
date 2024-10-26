@@ -12,3 +12,25 @@ rule read =
   | var { VAR (Lexing.lexeme lexbuf) }
   | whitespace { read lexbuf }
   | eof { EOF }
+  | "let" { LET }
+  | "=" { EQUALS }
+  | "in" { IN }
+  | "+" { ADD }
+  | "-" { SUB }
+  | "*" { MUL }
+  | "/" { DIV }
+  | "(" { LPAREN }
+  | ")" { RPAREN }
+  | "||" {OR}
+  | "&&" {AND}
+  | "<" {LT}
+  | "<=" {LTE}
+  | ">" {GT}
+  | ">=" {GTE}
+  | "<>" {NEQ}
+  | "mod" {MOD}
+  | "if" {IF}
+  | "then" {THEN}
+  | "else" {ELSE}
+  | "fun" {FUN}
+  | "->" {ARROW}
