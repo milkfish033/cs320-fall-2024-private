@@ -16,6 +16,7 @@ rule read =
   | "=" { EQUALS }
   | "in" { IN }
   | "+" { ADD }
+  | "->" {ARROW}
   | "-" { SUB }
   | "*" { MUL }
   | "/" { DIV }
@@ -33,4 +34,5 @@ rule read =
   | "then" {THEN}
   | "else" {ELSE}
   | "fun" {FUN}
-  | "->" {ARROW}
+  | "true" {TRUE}
+  | "false" {FALSE}

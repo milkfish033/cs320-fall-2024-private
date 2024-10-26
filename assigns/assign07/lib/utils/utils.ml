@@ -7,7 +7,9 @@ type bop =
 type expr =
   | Num of int
   | Var of string
-  | Unit | True | False
+  | Unit 
+  | True 
+  | False
   | App of expr * expr
   | Bop of bop * expr * expr
   | If of expr * expr * expr

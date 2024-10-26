@@ -1,10 +1,16 @@
 %{
 open Utils
+
+let rec mk_app e es =
+  match es with
+  | [] -> e
+  | x :: es -> mk_app (App (e, x)) es
 %}
 
 %token LET
 %token <int> NUM
 %token <string> VAR
+%token ARROW
 %token EQUALS
 %token IN
 %token EOF
@@ -26,16 +32,19 @@ open Utils
 %token IF
 %token THEN 
 %token ELSE
-%token ARROW
 %token FUN
+%token TRUE 
+%token FALSE
 
 
 
+
+%right OR 
+%right AND 
 %left LT LTE GT GTE EQ NEQ
-%right OR AND 
-%left ADD SUB MUL DIV MOD
+%left ADD SUB
+%left MUL DIV MOD
 
-%
 %start <Utils.prog> prog
 
 %%
@@ -48,7 +57,7 @@ expr:
     {If (e1, e2, e3)}
   | LET; x= VAR; EQUALS; e1 = expr; IN; e2 = expr 
     {Let (x, e1, e2)}
-  | FUN; x = VAR; ARROW; e1 = expr;
+  | FUN; x = VAR; ARROW; e1 = expr
     {Fun (x, e1)}
   | e = expr2 {e}
 
@@ -70,15 +79,16 @@ expr:
 
 
 expr2:
-  | e1 = expr2; op = bop; e2 = expr2; 
+  | e1 = expr2; op = bop; e2 = expr2 
     {Bop (op, e1, e2)}
-  | #more here
+  | e = expr3; es = expr3* {mk_app e es}
+
 
 
 expr3:
-  |LPAREN;RPAREN; 
-  #more here
-
-
-  | n = NUM {Num n}; x = VAR {Var x}
+  |LPAREN;RPAREN; {Unit}
+  |TRUE {True}
+  |FALSE {False}
+  | n = NUM {Num n}
+  | x = VAR {Var x}
   | LPAREN; e = expr; RPAREN {e}
