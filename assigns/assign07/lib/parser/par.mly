@@ -7,7 +7,7 @@ let rec mk_app e es =
   | x :: es -> mk_app (App (e, x)) es
 %}
 
-%token LET
+
 %token <int> NUM
 %token <string> VAR
 %token ARROW
@@ -35,7 +35,7 @@ let rec mk_app e es =
 %token FUN
 %token TRUE 
 %token FALSE
-
+%token LET
 
 
 
@@ -82,6 +82,7 @@ expr2:
   | e1 = expr2; op = bop; e2 = expr2 
     {Bop (op, e1, e2)}
   | e = expr3; es = expr3* {mk_app e es}
+
 
 
 
