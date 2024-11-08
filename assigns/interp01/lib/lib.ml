@@ -3,6 +3,27 @@ open Utils
 open Stdlib320
 let parse = My_parser.parse
 
+
+
+
+  
+  let rec subst x e1 e2 = 
+  match e2 with 
+    |Var y -> if x = y then x else Var y
+    |Num _ | Unit | True | False -> e2
+    |Bop (op, e21, e22) -> Bop(op, subst x e1 e21, subst x e1 e22)
+    |App (e21, e22) -> App( subst x e1 e21, subst x e1 e22)
+    |If (e21, e22, e23) -> If(subst x e1 e21, subst x e1 e22, subst x e1 e23)
+    |Fun (y, body) ->
+      if x = y then e2 else Fun (y, subst x e1 body)
+    |Let (y, e21, e22) -> 
+      let e21' = subst x e1 e21 in 
+      let e22' = if x = y then e22 else subst x e1 e22 in 
+      Let (y, e21', e22')
+
+
+
+
 let rec eval e = 
   match e with 
     | Num i -> Ok (VNum i)
@@ -37,10 +58,16 @@ let rec eval e =
           | And, Ok(VBool v1), Ok(VBool v2) ->  Ok( VBool (v1 && v2))
           | Or, Ok(VBool v1), Ok(VBool v2) ->  Ok( VBool (v1 || v2))
           | _ -> Error(InvalidArgs op))
-      | App (e1, e2) -> assert false
-      | Let(str, e1, e2) -> assert false
-      | Fun(str , e) -> assert false
-
+      | Let(str, e1, e2) -> assert false   
+      | Fun(str , e) -> Ok(VFun (str, e))
+      | App (e1, e2) -> (
+        let v1 = eval e1 in 
+        let v2 = eval e2 in 
+        match v1 with 
+         |Ok(VFun (x, body)) ->
+            eval (subst x v2 body)
+         |_ -> Error(InvalidApp)
+      )
 
 
 (*
