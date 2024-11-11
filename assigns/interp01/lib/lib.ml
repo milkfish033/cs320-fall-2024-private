@@ -11,7 +11,7 @@ let parse = My_parser.parse
       |VBool true -> True
       |VBool false -> False
    
-  
+
 
   let rec replace_var x y e =
     match e with 
@@ -100,5 +100,9 @@ let rec eval e =
 let interp str =
   let v = parse str in
     match v with 
-      |Some e -> eval e
+      |Some e -> 
+        (match eval e with 
+          |Ok(v) -> Ok(v)
+          |Error(x) -> Error(x)
+          )
       |None -> Error(ParseFail)
