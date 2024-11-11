@@ -4,17 +4,29 @@ open Stdlib320
 let parse = My_parser.parse
 
   let expr_of_val v =
-    match v with 
-      | Ok(VFun (x,e)) -> Fun (x,e)
-      |
-
+    match v with
+      |VFun (x,e) -> Fun(x,e)
+      |VUnit -> Unit
+      |VNum i -> Num i 
+      |VBool true -> True
+      |VBool false -> False
+   
+  
 
   let rec replace_var x y e =
     match e with 
       |Var z -> if z = y then Var x else Var z
-      |App (e1,e2) -> App(replace_var x y e1, replace x y e2)
+      |App (e1,e2) -> App(replace_var x y e1, replace_var x y e2)
       |Fun (z, e) -> Fun(z, replace_var x y e)
+      |Num i -> Num i
+      |Unit ->  Unit
+      |True -> True
+      |False -> False
+      |Bop (op, e1, e2) -> Bop(op, replace_var x y e1, replace_var x y e2)
+      |If (e1, e2, e3) -> If(replace_var x y e1, replace_var x y e2, replace_var x y e3)
+      |Let(str, e1, e2) -> Let(str, replace_var x y e1, replace_var x y e2)
 
+ 
   let rec subst x e1 e2 = 
   match e2 with  
     |Var y -> if e1 = y then expr_of_val x else Var y
@@ -29,7 +41,7 @@ let parse = My_parser.parse
         Fun (z, subst x e1 (replace_var z y body))
     |Let (y, e21, e22) -> 
       let e21' = subst x e1 e21 in 
-      let e22' = if x = y then e22 else subst x e1 e22 in 
+      let e22' = if e1 = y then e22 else subst x e1 e22 in 
       Let (y, e21', e22')
 
 
@@ -62,33 +74,31 @@ let rec eval e =
           | Lte, Ok(VNum v1), Ok(VNum v2) ->  Ok( VBool (v1 <= v2))
           | Gt, Ok(VNum v1), Ok(VNum v2) ->  Ok( VBool (v1 > v2))
           | Gte, Ok(VNum v1), Ok(VNum v2) ->  Ok( VBool (v1 >= v2))
+          | Eq, Ok(VFun (x,y)), Ok(VFun (m, n)) -> Ok( VBool((x = m ) &&(y = n )))
           | Eq, v1, v2 -> Ok(VBool(v1=v2))
+          | Neq, Ok(VFun (x,y)), Ok(VFun (m, n)) -> Ok( VBool((x <> m ) &&(y <> n )))
           | Neq, v1, v2 ->  Ok( VBool (v1 <> v2))
           | And, Ok(VBool v1), Ok(VBool v2) ->  Ok( VBool (v1 && v2))
           | Or, Ok(VBool v1), Ok(VBool v2) ->  Ok( VBool (v1 || v2))
           | _ -> Error(InvalidArgs op))
-      | Let(str, e1, e2) -> eval(subst (eval e1) e2) 
+      | Let(str, e1, e2) -> 
+          (match eval e1 with 
+            |Error(x) -> Error(x)
+            |Ok(v) -> eval(subst v str e2) 
+          )
+        
       | Fun(str , e) -> Ok(VFun (str, e))
       | App (e1, e2) -> 
         match eval e1 with  
-         |Ok(VFun (x, e)) ->
-            (match eval e2 with 
-            | Ok(VNum v2) -> eval(subst v2 x e)
-            | Ok(VBool v2) -> eval(subst v2 x e)
-            | Ok(VUnit) -> eval(subst  x e)
-            | Ok(VFun) -> assert false
-            | Error(x) ->  assert false
-            )
+          |Ok(VFun (x, e)) ->
+            (match (eval e2) with
+              |Error(x) -> Error(x)
+              |Ok(v) -> eval(subst v x e))
          |_ -> Error(InvalidApp)
       
 
-
 let interp str =
-let* prog = parse str in
-let expr = desugar prog in
-  eval expr
-        
-let interp' str =
-match interp str with
-    | Some v -> string_of_expr (expr_of_val v)
-    | None -> "ERROR"
+  let v = parse str in
+    match v with 
+      |Some e -> eval e
+      |None -> Error(ParseFail)
