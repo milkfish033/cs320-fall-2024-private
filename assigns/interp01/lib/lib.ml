@@ -77,8 +77,15 @@ let rec eval e =
           | Eq, v1, v2 -> Ok(VBool(v1=v2))
           | Neq, Ok(VFun (x,y)), Ok(VFun (m, n)) -> Ok( VBool((x <> m ) &&(y <> n )))
           | Neq, v1, v2 ->  Ok( VBool (v1 <> v2))
-          | And, Ok(VBool v1), Ok(VBool v2) ->  Ok( VBool (v1 && v2))
-          | Or, Ok(VBool v1), Ok(VBool v2) ->  Ok( VBool (v1 || v2))
+          | And, Ok(VBool v1), Ok(VBool v2) ->  
+              (match v1, v2 with
+                |false, _ -> Ok(VBool false)
+                |true, _ -> Ok(VBool true)
+             )
+          | Or, Ok(VBool v1), Ok(VBool v2) -> (
+            match v1, v2 with
+            |true, _ -> Ok(VBool true)
+            |false, _ ->Ok(VBool false))
           | _ -> Error(InvalidArgs op))
       | Let(str, e1, e2) -> 
           (match eval e1 with 
