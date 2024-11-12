@@ -8,8 +8,9 @@ let var = ['a'-'z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 
 rule read =
   parse
+  | "()" {UNIT}
   | "let" { LET }
-  | "=" { EQUALS }
+  | "=" { EQ}
   | "in" { IN }
   | "+" { ADD }
   | "->" {ARROW}

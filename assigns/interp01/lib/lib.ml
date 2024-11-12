@@ -12,7 +12,6 @@ let parse = My_parser.parse
       |VBool false -> False
    
 
-
   let rec replace_var x y e =
     match e with 
       |Var z -> if z = y then Var x else Var z
@@ -105,4 +104,4 @@ let interp str =
           |Ok(v) -> Ok(v)
           |Error(x) -> Error(x)
           )
-      |None -> Error(ParseFail)
+      |_ -> Error(ParseFail)

@@ -10,8 +10,8 @@ let rec mk_app e es =
 
 %token <int> NUM
 %token <string> VAR
+%token UNIT
 %token ARROW
-%token EQUALS
 %token IN
 %token EOF
 %token ADD
@@ -55,7 +55,7 @@ prog:
 expr: 
   | IF; e1 = expr; THEN; e2 = expr; ELSE; e3 = expr
     {If (e1, e2, e3)}
-  | LET; x= VAR; EQUALS; e1 = expr; IN; e2 = expr 
+  | LET; x= VAR; EQ; e1 = expr; IN; e2 = expr 
     {Let (x, e1, e2)}
   | FUN; x = VAR; ARROW; e1 = expr
     {Fun (x, e1)}
@@ -87,7 +87,7 @@ expr2:
 
 
 expr3:
-  |LPAREN;RPAREN; {Unit}
+  |UNIT {Unit}
   |TRUE {True}
   |FALSE {False}
   | n = NUM {Num n}
