@@ -10,7 +10,6 @@ let parse = My_parser.parse
       |VNum i -> Num i 
       |VBool true -> True
       |VBool false -> False
-   
 
   let rec replace_var x y e =
     match e with 
@@ -93,7 +92,6 @@ let rec eval e =
             |Error(x) -> Error(x)
             |Ok(v) -> eval(subst v str e2) 
           )
-        
       | Fun(str , e) -> Ok(VFun (str, e))
       | App (e1, e2) -> 
         match eval e1 with  
