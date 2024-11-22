@@ -43,7 +43,7 @@ let rec mk_app e es =
 %%
 
 prog:
-    | x = (e = toplet; e1 = toplet* {mk_app e e1}); EOF{x}
+    | ls toplet*  EOF{ls}
 
 toplet: 
     | LET; x = VAR; a = (a1 = arg; a2 = arg* {mk_app a1 a2}); COLON; t = ty; EQ; e = expr
@@ -54,7 +54,7 @@ toplet:
 
 arg:
     | LPAREN; x = VAR; COLON; t = ty; RPAREN 
-        {arg( x; t)} 
+        {arg(x; t)} 
 
 ty: 
     | INT {ty IntTy}
