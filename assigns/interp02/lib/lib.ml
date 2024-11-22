@@ -1,7 +1,7 @@
 
-open Utils 
-let parse = My_parser.parse
+open Utils
 
+let parse = My_parser.parse
 (*val desugar : prog -> expr
     
 val type_of : expr -> (ty, error) result

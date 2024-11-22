@@ -4,7 +4,7 @@ open Utils
 let rec mk_app e es =
   match es with
   | [] -> e
-  | x :: es -> mk_app (App (e, x)) es
+  | x :: es -> mk_app (SApp (e, x)) es
 %}
 
 %token <int> NUM
@@ -59,9 +59,9 @@ prog:
 
 toplet: 
     | LET; x = VAR; a = arg*; COLON; t = ty; EQ; e = expr
-        {false, x, a, t, e} 
+        { {is_rec = false; name = x; args = a; ty = t; value = e}}
     | LET; REC; x = VAR; a = arg; a1 =  arg*; COLON; t = ty; EQ; e = expr 
-        {true, x, (a :: a1), t, e}
+        { {is_rec =false; name = x; args = (a ::a1); ty = t; value = e}}
 
 arg:
     | LPAREN; x = VAR; COLON; t = ty; RPAREN 
@@ -77,13 +77,13 @@ ty:
 
 expr:
     |LET; x = VAR; a = arg*; COLON; t = ty;EQ; e = expr; IN; e1 = expr
-        {Let (false; x :: a; t; e; e1)}
+        {SLet (false; x :: a; t; e; e1)}
     |LET; REC x = VAR; a = arg; a1 = arg* ; COLON; t = ty; EQ; e = expr; IN; e1 = expr 
-        {Let (true; x :: a :: a1; t; e; e1)}
+        {SLet (true; x :: a :: a1; t; e; e1)}
     |IF; e = expr; THEN; e1 = expr; ELSE; e2 = expr 
-        {If (e, e1, e2)}
+        {SIf (e, e1, e2)}
     |FUN; a = arg; a1 = arg*; ARROW;e = expr 
-        {Fun (a; a1; expr)}
+        {SFun (a; a1; expr)}
     | e = expr2 {e}
 
 
@@ -103,16 +103,16 @@ expr:
     | OR {Or}
 
 expr2: 
-    | e = expr2; op = bop; e1 = expr2
-        {Bop (op, e, e1)}
-    | ASSERT; e = expr3 
-        {Assert (e)}
+    | e = expr2; op = bop; e1 = expr2;
+        {SBop (op, e, e1)}
+    | ASSERT; e = expr3; 
+        {SAssert (e)}
     | e = expr3; e1 = expr3* {mk_app e e1}
     
 expr3:
-    | UNIT {Unit}
-    | TRUE {True}
-    | FALSE {False}
-    | n = NUM {Num n}
-    | x = VAR {Var x}
+    | UNIT {SUnit}
+    | TRUE {STrue}
+    | FALSE {SFalse}
+    | n = NUM {SNum n}
+    | x = VAR {SVar x}
     | LPAREN; e = expr; RPAREN {e}
