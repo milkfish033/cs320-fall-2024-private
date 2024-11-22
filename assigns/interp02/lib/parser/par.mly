@@ -30,7 +30,7 @@ let rec mk_app e es =
 %token TRUE
 %token FALSE  
 
-
+%right ARROW
 %right OR 
 %right AND 
 %left LT LTE GT GTE EQ NEQ
@@ -54,21 +54,21 @@ toplet:
 
 arg:
     | LPAREN; x = VAR; COLON; t = ty; RPAREN 
-        {arg( x; t)}
+        {arg( x; t)} 
 
 ty: 
     | INT {ty IntTy}
     | BOOL {ty BoolTy}
     | TYUNIT {ty UnitTy}
     | t1 = ty; ARROW; t2 = ty {ty (FunTy t1; t2)}
-    | LPAREN; t = ty; RPAREN {ty (FunTy t; t)}
+    | LPAREN; t  = ty; RPAREN {t}
 
 expr:
     |LET; x = VAR; a = (a1 = arg; a2 = arg* {mk_app a1 a2}); COLON; t = ty;
         EQ; e = expr; IN; e1 = expr
         {Let (false; x ; a; t; e; e1)}
     |LET; REC x = VAR; a = arg; a1 = (a2 = arg; a3 = arg* {mk_app a2 a3}); 
-        COLON; t = ty; COLON; e = expr; IN; e1 = expr 
+        COLON; t = ty; EQ; e = expr; IN; e1 = expr 
         {Let (true; x; a; a1; t; e; e1)}
     |IF; e = expr; THEN; e1 = expr; ELSE; e2 = expr 
         {If (e, e1, e2)}
