@@ -1,6 +1,6 @@
 
-open Utils
-(include My_parser)
+open Utils 
+let parse = My_parser.parse
 
 (*val desugar : prog -> expr
     
@@ -48,10 +48,10 @@ let rec type_of ctxt =
                     | _ -> None
                     )
         | App (e1, e2) -> (
-        match go e1, go e2 with
-        | Some (FunTy (ty_arg, ty_out)), Some t2 when ty_arg = t2 -> Some ty_out
-        | _ -> None
-        )
+            match go e1, go e2 with
+                | Some (FunTy (ty_arg, ty_out)), Some t2 when ty_arg = t2 -> Some ty_out
+                | _ -> None
+            )
         | Let (x, ty, e1, e2) -> (
         match go e1 with
         | Some t1 when ty = t1 -> type_of ((x, ty) :: ctxt) e2

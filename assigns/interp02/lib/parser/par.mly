@@ -25,6 +25,18 @@ let rec mk_app e es =
 %token THEN 
 %token ELSE
 %token FUN 
+%token ADD
+%token SUB
+%token MUL
+%token DIV
+%token MOD
+%token LT
+%token LTE
+%token GT
+%token GTE
+%token NEQ
+%token AND
+%token OR
 %token ASSERT
 %token UNIT
 %token TRUE
@@ -43,38 +55,35 @@ let rec mk_app e es =
 %%
 
 prog:
-    | ls toplet*  EOF{ls}
+    | ls = toplet*  EOF{ls}
 
 toplet: 
-    | LET; x = VAR; a = (a1 = arg; a2 = arg* {mk_app a1 a2}); COLON; t = ty; EQ; e = expr
-        {toplet (false; x; a; t; e)} 
-    | LET; REC; x = VAR; a = arg; a1 = (a2 = arg; a3 = arg* {mk_app a2 a3}); 
-        COLON; t = ty; EQ; e = expr 
-        {toplet(true; x; a; a1; t; e)}
+    | LET; x = VAR; a = arg*; COLON; t = ty; EQ; e = expr
+        {false, x, a, t, e} 
+    | LET; REC; x = VAR; a = arg; a1 =  arg*; COLON; t = ty; EQ; e = expr 
+        {true, x, (a :: a1), t, e}
 
 arg:
     | LPAREN; x = VAR; COLON; t = ty; RPAREN 
         {arg(x; t)} 
 
 ty: 
-    | INT {ty IntTy}
-    | BOOL {ty BoolTy}
-    | TYUNIT {ty UnitTy}
-    | t1 = ty; ARROW; t2 = ty {ty (FunTy t1; t2)}
+    | INT {IntTy}
+    | BOOL {BoolTy}
+    | TYUNIT {UnitTy}
+    | t1 = ty; ARROW; t2 = ty {FunTy (t1, t2)}
     | LPAREN; t  = ty; RPAREN {t}
 
+
 expr:
-    |LET; x = VAR; a = (a1 = arg; a2 = arg* {mk_app a1 a2}); COLON; t = ty;
-        EQ; e = expr; IN; e1 = expr
-        {Let (false; x ; a; t; e; e1)}
-    |LET; REC x = VAR; a = arg; a1 = (a2 = arg; a3 = arg* {mk_app a2 a3}); 
-        COLON; t = ty; EQ; e = expr; IN; e1 = expr 
-        {Let (true; x; a; a1; t; e; e1)}
+    |LET; x = VAR; a = arg*; COLON; t = ty;EQ; e = expr; IN; e1 = expr
+        {Let (false; x :: a; t; e; e1)}
+    |LET; REC x = VAR; a = arg; a1 = arg* ; COLON; t = ty; EQ; e = expr; IN; e1 = expr 
+        {Let (true; x :: a :: a1; t; e; e1)}
     |IF; e = expr; THEN; e1 = expr; ELSE; e2 = expr 
         {If (e, e1, e2)}
-    |FUN; a = arg; a1 = (a2 = arg; a3 = arg* {mk_app a2 a3}); ARROW;
-        e = expr 
-        {a; a1; expr}
+    |FUN; a = arg; a1 = arg*; ARROW;e = expr 
+        {Fun (a; a1; expr)}
     | e = expr2 {e}
 
 

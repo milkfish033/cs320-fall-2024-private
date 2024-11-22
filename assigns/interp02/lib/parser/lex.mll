@@ -6,9 +6,9 @@ let whitespace = [' ' '\t' '\n' '\r']+
 let num = '-'? ['0'-'9']+
 let var = ['a'-'z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 
-rule_read =
+rule read =
   parse
-  | "EOF" {EOF}
+  | eof {EOF}
   | "let" {LET}
   | ":" {COLON}
   | "=" {EQ}
