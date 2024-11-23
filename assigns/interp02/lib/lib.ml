@@ -1,7 +1,7 @@
 
 open Utils
 
-let parse = My_parser.parse
+include My_parser
 (*val desugar : prog -> expr
     
 val type_of : expr -> (ty, error) result
@@ -11,19 +11,47 @@ exception DivByZero
 
 val eval : expr -> value
 
-val interp : string -> (value, error) result*)
+val interp : string -> (value, error) result*) 
+
+
+ let rec desugar_value s = 
+    match s with 
+        |SUnit -> Unit
+        |STrue -> True
+        |SFalse -> False
+        |SNum x -> Num x
+        |SVar x -> Var x
+        |SIf (a, b, c) -> If (desugar_value a, desugar_value b, desugar_value c)
+        |SBop (op, left, right) -> Bop (op, desugar_value left, desugar_value right)
+        |SAssert expr -> Assert (desugar_value expr)
+        | SFun { arg = (arg_name, arg_ty); args; body } ->
+            List.fold_right
+              (fun (arg_name, arg_ty) acc -> Fun (arg_name, arg_ty, acc))
+              ((arg_name, arg_ty) :: args)
+              (desugar_value body)
+        | SApp (fn, arg) -> App (desugar_value fn, desugar_value arg)
+        | SLet { is_rec; name; args; ty; value; body } ->
+            let desugared_value =
+              List.fold_right
+                (fun (arg_name, arg_ty) acc -> Fun (arg_name, arg_ty, acc))
+                args
+                (desugar_value value)
+            in
+            Let
+              { is_rec = is_rec
+              ; name = name
+              ; ty = ty
+              ; value = desugared_value
+              ; body = desugar_value body
+              }
 
 
 let rec desugar prog =
     match prog with
         | [] -> Unit
-        | l :: ls -> (
-            match l with
-            | TopLet (x, ty, body) ->
-                Let (x, ty, body, desugar ls)
-            | TopLetRec (f, x, ty_arg, ty_out, body) ->
-                LetRec (f, x, ty_arg, ty_out, body, desugar ls)
-            )
+        | ({is_rec = b; name = x; args = a; ty= t; value = e} ):: ls -> 
+            Let {is_rec = b; name= x; ty = t; value = desugar_value e ;body = desugar ls}
+            
 
 
 let rec type_of ctxt =
@@ -68,4 +96,4 @@ let rec type_of ctxt =
         | _ -> None
     in go
 
-let type_of = type_of []
+let type_of = type_of [] 

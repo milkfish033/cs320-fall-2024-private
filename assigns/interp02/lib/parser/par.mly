@@ -65,7 +65,7 @@ toplet:
 
 arg:
     | LPAREN; x = VAR; COLON; t = ty; RPAREN 
-        {arg(x; t)} 
+        {(x, t)} 
 
 ty: 
     | INT {IntTy}
@@ -77,13 +77,13 @@ ty:
 
 expr:
     |LET; x = VAR; a = arg*; COLON; t = ty;EQ; e = expr; IN; e1 = expr
-        {SLet (false; x :: a; t; e; e1)}
+        {SLet {is_rec = false; name = x; args = a; ty =t; value = e; body = e1}}
     |LET; REC x = VAR; a = arg; a1 = arg* ; COLON; t = ty; EQ; e = expr; IN; e1 = expr 
-        {SLet (true; x :: a :: a1; t; e; e1)}
+        {SLet {is_rec = true; name = x; args =  a :: a1; ty = t; value = e; body = e1}}
     |IF; e = expr; THEN; e1 = expr; ELSE; e2 = expr 
         {SIf (e, e1, e2)}
     |FUN; a = arg; a1 = arg*; ARROW;e = expr 
-        {SFun (a; a1; expr)}
+        {SFun {arg = a; args = a1; body =  e} }
     | e = expr2 {e}
 
 
