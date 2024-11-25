@@ -174,27 +174,99 @@ let rec eval en =
                 | Add ,e1, e2 -> go_op (+) e1 e2
                 | Sub ,e1, e2 -> go_op (-) e1 e2
                 | Mul ,e1, e2 -> go_op ( * ) e1 e2
-                | Eq (e1, e2) -> (
-            match go e1 with
-            | Some (VNum m) -> (
-                match go e2 with
-                | Some (VNum n) -> Some (VBool (m = n))
-                | _ -> None
+                | Div, _, Num 0 -> raise DivByZero
+                | Div, e1, e2 -> go_op (/) e1 e2
+                | Mod, e1, e2 -> go_op (mod) e1 e2
+                | Lt, e1, e2 -> (
+                    match go e1 with
+                        | VNum m  -> (
+                            match go e2 with
+                                |VNum n -> VBool (m<n)
+                                |_ -> failwith "Invalid"
+                        )
+                        | _ -> assert false
+                )
+                | Lte, e1, e2 -> (
+                    match go e1 with
+                    | VNum m  -> (
+                        match go e2 with
+                            |VNum n -> VBool (m<=n)
+                            |_ -> failwith "Invalid"
+                    )
+                    | _ -> assert false
+                )
+                | Gt, e1, e2 -> (
+                    match go e1 with
+                    | VNum m  -> (
+                        match go e2 with
+                            |VNum n -> VBool (m>n)
+                            |_ -> failwith "Invalid"
+                    )
+                    | _ -> assert false)
+                | Gte, e1, e2 -> (
+                    match go e1 with
+                    | VNum m  -> (
+                        match go e2 with
+                            |VNum n -> VBool (m>=n)
+                            |_ -> failwith "Invalid"
+                    )
+                    | _ -> assert false
+                )
+                | Eq,e1, e2 -> (
+                    match go e1 with
+                    | VNum m -> (
+                        match go e2 with
+                        | VNum n -> VBool (m = n)
+                        | _ -> failwith "Invalid"
+                    )
+                    |_ -> failwith "Invalid")
+                | Neq ,e1, e2 -> (
+                    match go e1 with
+                    | VNum m -> (
+                        match go e2 with
+                        | VNum n -> VBool (m <> n)
+                        | _ -> failwith "Invalid"
+                    )
+                    |_ -> failwith "Invalid")
+                | And, e1, e2 -> (
+                    match go e1 with
+                    | VBool m  -> (
+                        match go e2 with
+                            |VBool n -> VBool (m && n)
+                            |_ -> failwith "Invalid"
+                    )
+                    | _ -> assert false
+                )
+                | Or, e1, e2 -> (
+                    match go e1 with
+                    | VBool m  -> (
+                        match go e2 with
+                            |VBool n -> VBool (m || n)
+                            |_ -> failwith "Invalid"
+                    )
+                    | _ -> assert false
+                )
             )
-            | _ -> None
-            ))
+
         | If (e1, e2, e3) -> (
              match go e1 with
                 | VBool true -> go e2
                 | VBool false -> go e3
                 | _ -> assert false
             )
-        | Let {is_rec = false; name = x; ty = t; value = e1; body = e2} -> (
-            if (type_of e1) <> Ok(t) then assert false 
-            else
-            match go e1 with
-                | v -> eval (Env.add x v en) e2
+        | Let lets -> (
+            match lets. is_rec with
+                | false -> (
+                    match go lets.value with
+                        | v -> eval (Env.add lets.name v en) lets.body
+                )
+                | true ->(
+                    match go lets.value with  
+                        | VClos clos -> eval (Env.add lets.name (VClos {name = Some lets.name; arg =clos.arg; body = clos.body;env = en})en) lets.body
+                        | _ -> failwith "Invalid"
+                )
         )
+        
         | App (e1, e2) -> (
             match go e1 with
                 | VClos {name = f; arg = x; body = b; env = fun_env} -> (
@@ -211,8 +283,7 @@ let rec eval en =
                 |_ -> failwith "Invalid"
            
         )
-        | Let{is_rec = true; name = x; ty = t; value = e1; body = e2} ->
-            eval (Env.add f (VClos {name = f;arg = x; body =e1; env = e}) en) e2
+    
         and go_op op e1 e2 =
             match go e1 with
                 | VNum m -> (
@@ -221,8 +292,18 @@ let rec eval en =
                         | _ -> assert false
                 )
             | _ -> assert false
-
-
         in go
         
     let eval = eval Env.empty
+
+
+(* val interp : string -> (value, error) result *)
+let interp str =
+    match parse str with
+    | Some prog -> (
+        let expr = desugar prog in
+        match type_of expr with
+        | Ok _ -> Ok (eval expr) (* Ensure `eval` returns a `value` wrapped in `Ok` *)
+        | Error e -> Error e (* Pass along the error if type-checking fails *)
+    )
+    | None -> Error ParseErr (* Return a specific error when parsing fails *)
