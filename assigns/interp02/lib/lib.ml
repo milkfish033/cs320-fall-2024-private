@@ -45,7 +45,6 @@ val interp : string -> (value, error) result*)
               ; body = desugar_value body
               }
 
-
 let rec desugar prog =
     match prog with
         | [] -> Unit
@@ -54,46 +53,79 @@ let rec desugar prog =
             
 
 
+(*expr -> (ty, error) result*)
 let rec type_of ctxt =
     let rec go = function
         | Unit -> Ok(UnitTy)
         | True -> Ok(BoolTy)
         | False -> Ok(BoolTy)
-        | Var x -> Error(UnknownVar x)
         | Num _ -> Ok(IntTy)
-        | Fun (x, ty, e) -> (
-            match type_of ((x, ty) :: ctxt) e with
-            | Some ty_out -> Some (FunTy (ty, ty_out))
-            | _ -> None
+        | Var x -> Error(UnknownVar x)
+        | If (e1, e2, e3) -> (
+            match go e1, go e2, go e3 with
+            | Ok(BoolTy), Ok(t2), Ok(t3)  -> (
+                if t2 = t3 then Ok(t2)
+                else Error(IfTyErr(t2,t3))
+                )
+            | Ok(t), _,_ -> Error(IfCondTyErr(t))
+            | _ -> Error(ParseErr)
             )
-            | Add (e1, e2) -> go_op IntTy e1 e2
-            | Sub (e1, e2) -> go_op IntTy e1 e2
-            | Mul (e1, e2) -> go_op IntTy e1 e2
-            | Eq (e1, e2) -> go_op BoolTy e1 e2
-            | If (e1, e2, e3) -> (
-                match go e1, go e2, go e3 with
-                    | Some BoolTy, Some t2, Some t3 when t2 = t3 -> Some t3
-                    | _ -> None
-                    )
+        |Assert e -> 
+            (match type_of e with 
+                | Ok(BoolTy) -> Ok(BoolTy)
+                | Ok(t)-> Error(AssertTyErr(t))
+                | _ -> Error(ParseErr) 
+            )
+        | Bop (op, x,y) -> (
+            match op, x, y with 
+                | Add, e1, e2 -> go_op Add IntTy e1 e2
+                | Sub, e1, e2 -> go_op Sub IntTy e1 e2
+                | Mul, e1, e2 -> go_op Mul IntTy e1 e2 
+                | Div, e1, e2 -> go_op Div IntTy e1 e2
+                | Mod, e1, e2 -> go_op Mod IntTy e1 e2
+                | And, e1, e2 -> go_op And BoolTy e1 e2 
+                | Or, e1, e2 -> go_op Or BoolTy e1 e2 
+                | Lt, e1, e2 -> go_op_1 Lt BoolTy e1 e2 
+                | Lte, e1, e2 -> go_op_1 Lte BoolTy e1 e2 
+                | Gt, e1, e2 -> go_op_1 Gt BoolTy e1 e2 
+                | Gte, e1, e2 -> go_op_1 Gte BoolTy e1 e2 
+                | Eq, e1, e2 -> go_op_1 Eq BoolTy e1 e2 
+                | Neq, e1, e2 -> go_op_1 Neq BoolTy e1 e2 
+                )
+        | Fun (_, ty, e) -> (
+            match go e with 
+                |Ok(t) -> if t = ty then Ok(FunTy(ty,t))
+                            else Error(FunArgTyErr(ty, t))
+                |_ -> Error(ParseErr)
+            )
         | App (e1, e2) -> (
             match go e1, go e2 with
-                | Some (FunTy (ty_arg, ty_out)), Some t2 when ty_arg = t2 -> Some ty_out
-                | _ -> None
+                | (Ok(FunTy (ty_arg, ty_out))), t2 when Ok(ty_arg) = t2 -> Ok(ty_out)
+                | Ok(t),_ -> Error(FunAppTyErr(t))
+                | _ -> Error(ParseErr)
             )
         | Let (x, ty, e1, e2) -> (
-        match go e1 with
-        | Some t1 when ty = t1 -> type_of ((x, ty) :: ctxt) e2
-        | _ -> None
+            match go e1 with
+            | Ok(t1) when ty = t1 -> type_of ((x, ty)) e2
+            | _ -> None
         )
-        | LetRec (f, x, ty_arg, ty_out, e1, e2) -> (
-        match type_of ((x, ty_arg) :: (f, FunTy(ty_arg, ty_out)) :: ctxt) e1 with
-        | Some ty when ty = ty_out -> type_of ((f, FunTy(ty_arg, ty_out)) :: ctxt) e2
-        | _ -> None
-        )
-    and go_op ty_out e1 e2 =
+    and go_op op ty_out e1 e2 =
         match go e1, go e2 with
-        | Some IntTy, Some IntTy -> Some ty_out
-        | _ -> None
-    in go
+        | Ok t1, Ok t2 when t1 = ty_out && t2 = ty_out -> Ok(ty_out)
+        | Ok t1, Ok t2 when t2 = ty_out -> Error (OpTyErrL (op, ty_out, t1))
+        | Ok t1, Ok t2 when t1 = ty_out -> Error (OpTyErrR (op, ty_out, t2))
+        | _, _ -> Error(ParseErr)
+    
+    and go_op_1 op ty_out e1 e2 =
+        match go e1, go e2 with
+        | Ok t1, Ok t2 when t1 = IntTy && t2 = IntTy -> Ok(ty_out)
+        | Ok t1, Ok t2 when t2 = IntTy -> Error (OpTyErrL (op, ty_out, t1))
+        | Ok t1, Ok t2 when t1 = IntTy -> Error (OpTyErrR (op, ty_out, t2))
+        | _, _ -> Error(ParseErr)
 
-let type_of = type_of [] 
+    in go 
+
+    let type_of = type_of []
+
+
+ 
