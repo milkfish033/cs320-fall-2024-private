@@ -28,30 +28,31 @@ exception DivByZero
         | SBop (op, left, right) -> Bop (op, desugar_value left, desugar_value right)
         | SAssert expr -> Assert (desugar_value expr)
         | SFun { arg = (arg_name, arg_ty); args; body } ->
-            List.fold_right
-              (fun (arg_name, arg_ty) acc -> Fun (arg_name, arg_ty, acc))
-              ((arg_name, arg_ty) :: args)
-              (desugar_value body)
+            let m = List.fold_right
+              (fun (arg_name, arg_ty) acc -> Fun (arg_name, arg_ty, acc)) args (desugar_value body) in
+              Fun(arg_name, arg_ty, m)
         | SApp (fn, arg) -> App (desugar_value fn, desugar_value arg)
         | SLet { is_rec; name; args; ty; value; body } ->
+            let typ = List.fold_right (fun(_, t1)acc -> FunTy(t1, acc)) args ty in 
             let desugared_value =
               List.fold_right
                 (fun (arg_name, arg_ty) acc -> Fun (arg_name, arg_ty, acc))
                 args
-                (desugar_value value)
+                (desugar_value value) 
             in
             Let
               { is_rec = is_rec
               ; name = name
-              ; ty = ty
+              ; ty = typ
               ; value = desugared_value
               ; body = desugar_value body
               }
 
-let rec desugar prog =
+let rec desugar (prog : prog)=
     match prog with
         | [] -> Unit
         | ({is_rec = b; name = x; args = a; ty= t; value = e} ):: ls -> 
+            let typ = List.fold_right (fun (_, t1)acc -> FunTy(t1, acc)) a t in
             let desugared_value =
                 List.fold_right
                   (fun (arg_name, arg_ty) acc -> Fun (arg_name, arg_ty, acc))
@@ -61,7 +62,7 @@ let rec desugar prog =
               Let
                 { is_rec = b
                 ; name = x
-                ; ty = t
+                ; ty = typ
                 ; value = desugared_value
                 ; body = desugar ls
                 }
