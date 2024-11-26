@@ -91,7 +91,7 @@ let rec type_of ctxt =
                 )
             |Assert e -> 
                 (match go e with 
-                    | Ok(BoolTy) -> Ok(BoolTy)
+                    | Ok(BoolTy) -> Ok(UnitTy)
                     | Ok(t)-> Error(AssertTyErr(t))
                     | Error e -> Error e 
                 )
@@ -311,4 +311,4 @@ let interp str =
         | Ok _ -> Ok (eval expr) (* Ensure `eval` returns a `value` wrapped in `Ok` *)
         | Error e -> Error e (* Pass along the error if type-checking fails *)
     )
-    | None -> Error ParseErr (* Return a specific error when parsing fails *)
+    | _ -> Error ParseErr (* Return a specific error when parsing fails *)
