@@ -1,10 +1,7 @@
 %{
 open Utils
 
-let rec mk_app e es =
-  match es with
-  | [] -> e
-  | x :: es -> mk_app (SApp (e, x)) es
+
 %}
 
 %token <int> NUM
@@ -55,17 +52,17 @@ let rec mk_app e es =
 %%
 
 prog:
-    | ls = toplet*  EOF{ls}
+    | ls = toplet* EOF{ls}
 
 toplet: 
     | LET; x = VAR; a = arg*; COLON; t = ty; EQ; e = expr
         { {is_rec = false; name = x; args = a; ty = t; value = e}}
     | LET; REC; x = VAR; a = arg; a1 =  arg*; COLON; t = ty; EQ; e = expr 
-        { {is_rec =false; name = x; args = (a ::a1); ty = t; value = e}}
+        { {is_rec = true; name = x; args = (a ::a1); ty = t; value = e}}
 
 arg:
     | LPAREN; x = VAR; COLON; t = ty; RPAREN 
-        {(x, t)} 
+        {x, t} 
 
 ty: 
     | INT {IntTy}
@@ -103,11 +100,11 @@ expr:
     | OR {Or}
 
 expr2: 
-    | e = expr2; op = bop; e1 = expr2;
+    | e = expr2; op = bop; e1 = expr2
         {SBop (op, e, e1)}
-    | ASSERT; e = expr3; 
+    | ASSERT; e = expr3
         {SAssert (e)}
-    | e = expr3; e1 = expr3* {mk_app e e1}
+    | e = expr3; e1 = expr3* {List.fold_left (fun e1 e2 -> SApp (e1, e2)) e e1}
     
 expr3:
     | UNIT {SUnit}
