@@ -87,13 +87,13 @@ let rec type_of ctxt =
                     else Error(IfTyErr(t2,t3))
                     )
                 | Ok(t), _,_ -> Error(IfCondTyErr(t))
-                | _ -> assert false
+                | Error e,_,_ -> Error e             
                 )
             |Assert e -> 
                 (match go e with 
                     | Ok(BoolTy) -> Ok(BoolTy)
                     | Ok(t)-> Error(AssertTyErr(t))
-                    | _ -> assert false 
+                    | Error e -> Error e 
                 )
             | Bop (op, x,y) -> (
                 match op, x, y with 
@@ -111,44 +111,48 @@ let rec type_of ctxt =
                     | Eq, e1, e2 -> go_op_1 Eq BoolTy e1 e2 
                     | Neq, e1, e2 -> go_op_1 Neq BoolTy e1 e2 
                     )
-            | Fun (_, ty, e) -> (
-                match go e with 
+            | Fun (x, ty, e) -> (
+                match type_of ((x, ty) :: ctxt) e with 
                     |Ok(t) -> if t = ty then Ok(FunTy(ty,t))
                                 else Error(FunArgTyErr(ty, t))
-                    |_ -> assert false
+                    |Error e  -> Error e
                 )
             | App (e1, e2) -> (
                 match go e1, go e2 with
                     | (Ok(FunTy (ty_arg, ty_out))), t2 when Ok(ty_arg) = t2 -> Ok(ty_out)
                     | Ok(t),_ -> Error(FunAppTyErr(t))
-                    | _ -> assert false
+                    |Error e,_  -> Error e
                 )
-            | Let {is_rec = false; name = x; ty = t; value = e1; body = e2} -> (
-                match go e1 with
-                | Ok(t1) when t = t1 ->  type_of  ((x, t) :: ctxt) e2
-                | _ -> assert false
-            )
-            | Let {is_rec = true; name = x; ty = t; value = e1; body = e2} -> (
-                match type_of ((x, t)::ctxt) e1  with
-                | Ok(t1) ->  if t <> t1 then Error(LetTyErr(t,t1)) else(
-                    match type_of((x,t) :: ctxt) e2 with
+            | Let {is_rec ; name; ty; value; body} -> (
+                if is_rec = false then (
+                    match go value with
+                    |Ok t1 -> (if ty = t1 then type_of ((name, ty)::ctxt) body
+                     else Error (LetTyErr(ty,t1)) )
+                    |Error e -> Error e
+                )
+                else (
+                    match type_of ((name, ty)::ctxt) value with
+                    |Ok t1 -> if ty<>t1 then Error (LetTyErr (ty, t1))else(
+                        match type_of ((name,ty) :: ctxt) body with
                         |Ok typ -> Ok typ
-                        | Error e-> Error e )
-                        |Error e -> Error e  
+                        |Error e -> Error e 
+                    )
+                    |Error e -> Error e
+                )
             )
         and go_op op ty_out e1 e2 =
             match go e1, go e2 with
             | Ok t1, Ok t2 when t1 = ty_out && t2 = ty_out -> Ok(ty_out)
             | Ok t1, Ok t2 when t2 = ty_out -> Error (OpTyErrL (op, ty_out, t1))
             | Ok t1, Ok t2 when t1 = ty_out -> Error (OpTyErrR (op, ty_out, t2))
-            | _, _ -> Error(ParseErr)
+             | _, _ -> failwith "Invalid"
         
         and go_op_1 op ty_out e1 e2 =
             match go e1, go e2 with
             | Ok t1, Ok t2 when t1 = IntTy && t2 = IntTy -> Ok(ty_out)
             | Ok t1, Ok t2 when t2 = IntTy -> Error (OpTyErrL (op, ty_out, t1))
             | Ok t1, Ok t2 when t1 = IntTy -> Error (OpTyErrR (op, ty_out, t2))
-            | _, _ -> Error(ParseErr)
+            | _, _ -> failwith "Invalid"
 
         in go 
 
@@ -285,7 +289,6 @@ let rec eval en =
                 |_ -> failwith "Invalid"
            
         )
-    
         and go_op op e1 e2 =
             match go e1 with
                 | VNum m -> (
