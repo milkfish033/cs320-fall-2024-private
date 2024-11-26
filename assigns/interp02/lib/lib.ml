@@ -254,7 +254,7 @@ let rec eval en =
                 | VBool false -> go e3
                 | _ -> assert false
             )
-            let(is_rec, name, _ , value, body)
+
         | Let lets -> (
             match lets. is_rec with
                 | false -> (
