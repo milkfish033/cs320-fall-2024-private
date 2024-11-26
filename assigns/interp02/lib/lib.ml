@@ -215,7 +215,7 @@ let rec eval en =
                             |VNum n -> VBool (m>=n)
                             |_ -> failwith "Invalid"
                     )
-                    | _ -> assert false
+                    | _ ->  failwith "Invalid"
                 )
                 | Eq,e1, e2 -> (
                     match go e1 with
@@ -240,7 +240,7 @@ let rec eval en =
                             |VBool n -> VBool (m && n)
                             |_ -> failwith "Invalid"
                     )
-                    | _ -> assert false
+                    | _ ->  failwith "Invalid"
                 )
                 | Or, e1, e2 -> (
                     match go e1 with
@@ -249,7 +249,7 @@ let rec eval en =
                             |VBool n -> VBool (m || n)
                             |_ -> failwith "Invalid"
                     )
-                    | _ -> assert false
+                    | _ ->  failwith "Invalid"
                 )
             )
 
@@ -257,7 +257,7 @@ let rec eval en =
              match go e1 with
                 | VBool true -> go e2
                 | VBool false -> go e3
-                | _ -> assert false
+                | _ ->  failwith "Invalid"
             )
 
         | Let lets -> (
@@ -294,9 +294,9 @@ let rec eval en =
                 | VNum m -> (
                     match go e2 with
                         | VNum n -> VNum (op m n)
-                        | _ -> assert false
+                        | _ ->  failwith "Invalid"
                 )
-            | _ -> assert false
+                | _ ->  failwith "Invalid"
         in go
         
     let eval = eval Env.empty
